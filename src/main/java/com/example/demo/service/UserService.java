@@ -48,6 +48,11 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
+    // Tìm user theo email (Optional)
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
     // Tìm tất cả user theo mark giảm dần
     public List<User> findAllOrderByMarkDesc() {
         return userRepository.findAllByOrderByMarkDesc();

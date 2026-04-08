@@ -23,14 +23,17 @@ public class MainController {
     private final UserService userService;
     private final TopicService topicService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public MainController(ArticleService articleService, UserService userService,
                           TopicService topicService, CommentService commentService,
-                          LikeService likeService, PasswordEncoder passwordEncoder) {
+                          LikeService likeService, PasswordEncoder passwordEncoder,
+                          EmailService emailService) {
         this.articleService = articleService;
         this.userService = userService;
         this.topicService = topicService;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     // ✅ Trang login
@@ -79,6 +82,38 @@ public class MainController {
     public String registerForm(Model model) {
         model.addAttribute("user", new User());
         return "register"; // render register.html
+    }
+
+    // ✅ Chức năng Quên mật khẩu
+    @GetMapping("/forgot-password")
+    public String forgotPasswordForm() {
+        return "forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPasswordSubmit(@RequestParam String email, Model model) {
+        System.out.println("DEBUG: Nhận yêu cầu khôi phục mật khẩu cho email: " + email);
+        
+        // 1. Kiểm tra xem email có tồn tại trong hệ thống không
+        User user = userService.findByEmail(email).orElse(null);
+        if (user == null) {
+            model.addAttribute("error", "Email này không tồn tại trong hệ thống. Vui lòng kiểm tra lại!");
+            return "forgot-password";
+        }
+
+        // 2. Nếu tồn tại, tạo mã token ngẫu nhiên ngắn gọn (8 ký tự)
+        String token = java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        
+        try {
+            // 3. Gửi mail thực tế thông qua EmailService
+            emailService.sendResetPasswordEmail(email, token);
+            model.addAttribute("success", "Một mã khôi phục mật khẩu đã được gửi đến email " + email + ". Vui lòng kiểm tra hộp thư của bạn!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Lỗi khi gửi email: " + e.getMessage());
+        }
+
+        return "forgot-password";
     }
 
     @PostMapping("/register")
